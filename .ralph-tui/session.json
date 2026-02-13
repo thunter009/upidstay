@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "sessionId": "68d3f7ae-6b91-452f-922e-8d1ab9aabb97",
+  "status": "running",
+  "startedAt": "2026-02-13T05:26:29.518Z",
+  "updatedAt": "2026-02-13T05:27:29.433Z",
+  "currentIteration": 0,
+  "maxIterations": 10,
+  "tasksCompleted": 0,
+  "isPaused": false,
+  "agentPlugin": "claude",
+  "trackerState": {
+    "plugin": "beads-rust",
+    "epicId": "bd-1rl",
+    "totalTasks": 4,
+    "tasks": [
+      {
+        "id": "bd-3u3",
+        "title": "S-9.4: Native share API with fallback",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "bd-32y",
+        "title": "S-9.3: Copy link / Invite button in chat header",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "bd-123",
+        "title": "S-9.2: Dynamic /join/[room] route",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "bd-ty2",
+        "title": "S-9.1: Room name slugification utility",
+        "status": "in_progress",
+        "completedInSession": false
+      }
+    ]
+  },
+  "iterations": [],
+  "skippedTaskIds": [],
+  "cwd": "/Users/thom/10-19_projects/upidstay",
+  "activeTaskIds": [],
+  "subagentPanelVisible": false
+}

@@ -1,0 +1,14 @@
+{
+  "id": "68d3f7ae-6b91-452f-922e-8d1ab9aabb97",
+  "status": "running",
+  "startedAt": "2026-02-13T05:26:29.411Z",
+  "updatedAt": "2026-02-13T05:26:29.411Z",
+  "agentPlugin": "claude",
+  "trackerPlugin": "beads-rust",
+  "epicId": "bd-1rl",
+  "currentIteration": 0,
+  "maxIterations": 10,
+  "totalTasks": 0,
+  "tasksCompleted": 0,
+  "cwd": "/Users/thom/10-19_projects/upidstay"
+}
