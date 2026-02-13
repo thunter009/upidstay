@@ -3,10 +3,10 @@
   "sessionId": "68d3f7ae-6b91-452f-922e-8d1ab9aabb97",
   "status": "running",
   "startedAt": "2026-02-13T05:26:29.518Z",
-  "updatedAt": "2026-02-13T05:27:29.433Z",
-  "currentIteration": 0,
+  "updatedAt": "2026-02-13T05:31:53.985Z",
+  "currentIteration": 1,
   "maxIterations": 10,
-  "tasksCompleted": 0,
+  "tasksCompleted": 1,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -35,12 +35,23 @@
       {
         "id": "bd-ty2",
         "title": "S-9.1: Room name slugification utility",
-        "status": "in_progress",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       }
     ]
   },
-  "iterations": [],
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "completed",
+      "taskId": "bd-ty2",
+      "taskTitle": "S-9.1: Room name slugification utility",
+      "taskCompleted": true,
+      "durationMs": 56804,
+      "startedAt": "2026-02-13T05:26:32.586Z",
+      "endedAt": "2026-02-13T05:27:29.390Z"
+    }
+  ],
   "skippedTaskIds": [],
   "cwd": "/Users/thom/10-19_projects/upidstay",
   "activeTaskIds": [],

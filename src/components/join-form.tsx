@@ -7,11 +7,13 @@ import type { AvatarId } from "@/lib/types";
 
 interface JoinFormProps {
   onJoin: (username: string, room: string, avatar: AvatarId) => void;
+  initialRoom?: string;
+  roomLocked?: boolean;
 }
 
-export function JoinForm({ onJoin }: JoinFormProps) {
+export function JoinForm({ onJoin, initialRoom = "", roomLocked = false }: JoinFormProps) {
   const [username, setUsername] = useState("");
-  const [room, setRoom] = useState("");
+  const [room, setRoom] = useState(initialRoom);
   const [avatar, setAvatar] = useState<AvatarId>("bear");
 
   const canSubmit = username.trim().length > 0 && room.trim().length > 0;
@@ -47,10 +49,11 @@ export function JoinForm({ onJoin }: JoinFormProps) {
             <input
               type="text"
               value={room}
-              onChange={(e) => setRoom(e.target.value)}
+              onChange={(e) => !roomLocked && setRoom(e.target.value)}
               placeholder="Pick a room name"
               maxLength={30}
               className="kid-input"
+              disabled={roomLocked}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && canSubmit) onJoin(username.trim(), room.trim(), avatar);
               }}

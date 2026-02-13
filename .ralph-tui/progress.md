@@ -5,7 +5,8 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
-*Add reusable patterns discovered during development here.*
+- Next.js 16 App Router dynamic params: `params` is a `Promise<{}>`, unwrap with `use(params)` in client components
+- JoinForm accepts `initialRoom`/`roomLocked` props to pre-fill and disable room input
 
 ---
 
@@ -16,4 +17,14 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Emoji stripping needs both surrogate pair range (`U+10000+`) and lone surrogate cleanup
   - Vitest config picks up all `*.test.ts` files automatically
+---
+
+## 2026-02-13 - bd-123
+- Dynamic `/join/[room]` route: pre-fills room from URL param, input disabled
+- Plain `/join` route: all inputs editable
+- Extended `JoinForm` with `initialRoom`/`roomLocked` props
+- Files changed: `src/components/join-form.tsx`, `src/app/join/[room]/page.tsx` (new), `src/app/join/page.tsx` (new)
+- **Learnings:**
+  - Next.js 16 `params` is async — use React `use()` to unwrap in client components
+  - `slugifyRoom()` applied to URL param to normalize before pre-filling
 ---
