@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useSocket } from "@/lib/socket-context";
 import { getAvatarEmoji, type DifficultyLevel } from "@/lib/types";
 import { playReceiveSound, playJoinSound } from "@/lib/sounds";
+import { slugifyRoom } from "@/lib/slugify";
 import { MessageBubble } from "./message-bubble";
 import { ChatInput } from "./chat-input";
 import { TypingIndicator } from "./typing-indicator";
@@ -21,6 +22,7 @@ export function ChatRoom({ username, onLeave }: ChatRoomProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [autoRead, setAutoRead] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCopiedToast, setShowCopiedToast] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMsgCount = useRef(0);
 
@@ -49,10 +51,18 @@ export function ChatRoom({ username, onLeave }: ChatRoomProps) {
     onLeave();
   };
 
+  const handleInvite = async () => {
+    if (!room) return;
+    const url = `${window.location.origin}/join/${slugifyRoom(room)}`;
+    await navigator.clipboard.writeText(url);
+    setShowCopiedToast(true);
+    setTimeout(() => setShowCopiedToast(false), 2000);
+  };
+
   const filteredTyping = typingUsers.filter((u) => u !== username);
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-b from-sky-50 to-blue-50">
+    <div className="relative flex flex-col h-screen bg-gradient-to-b from-sky-50 to-blue-50">
       {/* Header */}
       <div className="bg-white shadow-sm px-4 py-3 flex items-center justify-between flex-shrink-0">
         <motion.button
@@ -73,14 +83,35 @@ export function ChatRoom({ username, onLeave }: ChatRoomProps) {
             <span>· {users.length} online</span>
           </div>
         </div>
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="text-xl p-2"
-          aria-label="Settings"
-        >
-          ⚙️
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleInvite}
+            className="text-xl p-2"
+            aria-label="Invite"
+          >
+            🔗
+          </button>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="text-xl p-2"
+            aria-label="Settings"
+          >
+            ⚙️
+          </button>
+        </div>
       </div>
+
+      {/* Copied toast */}
+      {showCopiedToast && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="absolute top-16 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg z-50"
+        >
+          Link copied!
+        </motion.div>
+      )}
 
       {/* Settings drawer */}
       {showSettings && (

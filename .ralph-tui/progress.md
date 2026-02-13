@@ -28,3 +28,12 @@ after each iteration and it's included in prompts for context.
   - Next.js 16 `params` is async — use React `use()` to unwrap in client components
   - `slugifyRoom()` applied to URL param to normalize before pre-filling
 ---
+
+## 2026-02-13 - bd-32y
+- Invite button (🔗) in chat header with `aria-label="Invite"`
+- Copies `${origin}/join/${slugifyRoom(room)}` to clipboard on click
+- "Link copied!" toast for 2s with framer-motion animation
+- Files changed: `src/components/chat-room.tsx`
+- **Learnings:**
+  - `room` from `useSocket()` is `string | null` — guard before passing to `slugifyRoom()`
+---
