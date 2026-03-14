@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useSocket } from "@/lib/socket-context";
 import { getAvatarEmoji, type DifficultyLevel } from "@/lib/types";
 import { playReceiveSound, playJoinSound } from "@/lib/sounds";
-import { slugifyRoom } from "@/lib/slugify";
+import { shareRoom } from "@/lib/share";
 import { MessageBubble } from "./message-bubble";
 import { ChatInput } from "./chat-input";
 import { TypingIndicator } from "./typing-indicator";
@@ -53,8 +53,7 @@ export function ChatRoom({ username, onLeave }: ChatRoomProps) {
 
   const handleInvite = async () => {
     if (!room) return;
-    const url = `${window.location.origin}/join/${slugifyRoom(room)}`;
-    await navigator.clipboard.writeText(url);
+    await shareRoom(room);
     setShowCopiedToast(true);
     setTimeout(() => setShowCopiedToast(false), 2000);
   };
@@ -62,7 +61,7 @@ export function ChatRoom({ username, onLeave }: ChatRoomProps) {
   const filteredTyping = typingUsers.filter((u) => u !== username);
 
   return (
-    <div className="relative flex flex-col h-screen bg-gradient-to-b from-sky-50 to-blue-50">
+    <div className="relative flex flex-col h-dvh bg-gradient-to-b from-sky-50 to-blue-50">
       {/* Header */}
       <div className="bg-white shadow-sm px-4 py-3 flex items-center justify-between flex-shrink-0">
         <motion.button
