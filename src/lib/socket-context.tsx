@@ -4,6 +4,11 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import { io, Socket } from "socket.io-client";
 import type { ChatMessage, RoomUser } from "./types";
 
+export interface ActiveRoom {
+  name: string;
+  count: number;
+}
+
 interface SocketContextValue {
   socket: Socket | null;
   connected: boolean;
@@ -11,6 +16,7 @@ interface SocketContextValue {
   users: RoomUser[];
   messages: ChatMessage[];
   typingUsers: string[];
+  activeRooms: ActiveRoom[];
   joinRoom: (room: string, username: string, avatar: string) => void;
   leaveRoom: () => void;
   sendMessage: (english: string, pigLatin: string) => void;
@@ -26,6 +32,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<RoomUser[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [activeRooms, setActiveRooms] = useState<ActiveRoom[]>([]);
   const typingTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   useEffect(() => {
@@ -34,9 +41,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     s.on("connect", () => setConnected(true));
     s.on("disconnect", () => setConnected(false));
+    s.on("room-list", (list: ActiveRoom[]) => setActiveRooms(list));
 
     s.on("room-users", (roomUsers: RoomUser[]) => {
       setUsers(roomUsers);
+    });
+
+    s.on("message-history", (msgs: ChatMessage[]) => {
+      setMessages(msgs);
     });
 
     s.on("new-message", (msg: ChatMessage) => {
@@ -135,6 +147,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         users,
         messages,
         typingUsers,
+        activeRooms,
         joinRoom,
         leaveRoom,
         sendMessage,

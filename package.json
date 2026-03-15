@@ -1,6 +1,6 @@
 {
   "name": "upidstay",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "tsx watch server.ts",
@@ -17,6 +17,7 @@
     "react-dom": "19.2.3",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
+    "sql.js": "^1.14.1",
     "tsx": "^4.21.0"
   },
   "devDependencies": {
