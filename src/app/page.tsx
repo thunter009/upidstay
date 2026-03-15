@@ -14,7 +14,7 @@ type View = "home" | "chat" | "practice";
 function AppContent() {
   const [view, setView] = useState<View>("home");
   const [username, setUsername] = useState("");
-  const { joinRoom, connected } = useSocket();
+  const { joinRoom, connected, activeRooms } = useSocket();
 
   const handleJoin = useCallback(
     (name: string, room: string, avatar: AvatarId) => {
@@ -36,7 +36,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-purple-50 to-sky-50 flex flex-col items-center justify-center p-6">
-      <JoinForm onJoin={handleJoin} />
+      <JoinForm onJoin={handleJoin} activeRooms={activeRooms} />
       <motion.button
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
@@ -48,6 +48,7 @@ function AppContent() {
       {!connected && (
         <div className="mt-4 text-sm text-red-400">Connecting to server...</div>
       )}
+      <div className="mt-4 text-xs text-gray-300">v0.2.0</div>
     </div>
   );
 }
