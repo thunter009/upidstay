@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# chat database
+/data/*.db
+/data/*.db-wal
+/data/*.db-shm
+
+# tooling state (ralph-tui, beads history)
+.ralph-tui/ralph.lock
+.ralph-tui/session.json
+.ralph-tui/iterations/
+.beads/.br_history/
