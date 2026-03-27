@@ -6,6 +6,7 @@ import type { ChatMessage, RoomUser } from "./types";
 
 export interface ActiveRoom {
   name: string;
+  slug: string;
   count: number;
 }
 
@@ -42,6 +43,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     s.on("connect", () => setConnected(true));
     s.on("disconnect", () => setConnected(false));
     s.on("room-list", (list: ActiveRoom[]) => setActiveRooms(list));
+
+    s.on("room-joined", (data: { slug: string; displayName: string }) => {
+      setRoom(data.displayName);
+    });
 
     s.on("room-users", (roomUsers: RoomUser[]) => {
       setUsers(roomUsers);

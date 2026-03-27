@@ -36,6 +36,19 @@ interface ChatMessage {
   timestamp: number;
 }
 
+// Canonical room slug — same logic as client-side slugifyRoom
+function slugifyRoom(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[\u{10000}-\u{10FFFF}]/gu, "")
+    .replace(/[\uD800-\uDFFF]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 // --- SQLite setup ---
 const dbPath = resolve(process.env.DB_PATH || "data/chat.db");
 const dataDir = resolve(dbPath, "..");
@@ -64,6 +77,28 @@ async function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_messages_room_ts ON messages(room, timestamp);
   `);
+
+  // Migrate: normalize existing room names to slugs
+  const roomResults = sqlDb.exec(`SELECT DISTINCT room FROM messages`);
+  if (roomResults.length) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const row of roomResults[0].values as any[][]) {
+      const original = row[0] as string;
+      const slug = slugifyRoom(original);
+      if (slug !== original) {
+        sqlDb.run(`UPDATE messages SET room = ? WHERE room = ?`, [slug, original]);
+      }
+    }
+  }
+
+  // Room display names table — maps slug to human-readable name
+  sqlDb.run(`
+    CREATE TABLE IF NOT EXISTS room_names (
+      slug TEXT PRIMARY KEY,
+      display_name TEXT NOT NULL
+    );
+  `);
+
   saveDb();
 }
 
@@ -101,13 +136,28 @@ function loadHistory(room: string): ChatMessage[] {
     .reverse();
 }
 
-function getKnownRooms(): string[] {
+function getKnownRooms(): { slug: string; displayName: string }[] {
   const results = sqlDb.exec(
-    `SELECT room, MAX(timestamp) as last_ts FROM messages GROUP BY room ORDER BY last_ts DESC LIMIT 50`
+    `SELECT m.room, COALESCE(rn.display_name, m.room), MAX(m.timestamp) as last_ts
+     FROM messages m
+     LEFT JOIN room_names rn ON rn.slug = m.room
+     GROUP BY m.room
+     ORDER BY last_ts DESC LIMIT 50`
   );
   if (!results.length) return [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return results[0].values.map((row: any[]) => row[0] as string);
+  return results[0].values.map((row: any[]) => ({
+    slug: row[0] as string,
+    displayName: row[1] as string,
+  }));
+}
+
+function setRoomDisplayName(slug: string, displayName: string) {
+  sqlDb.run(
+    `INSERT OR REPLACE INTO room_names (slug, display_name) VALUES (?, ?)`,
+    [slug, displayName]
+  );
+  saveDb();
 }
 
 // --- In-memory buffer ---
@@ -143,20 +193,27 @@ async function main() {
     cors: { origin: "*" },
   });
 
+  // Maps slug → display name for active rooms
+  const roomDisplayNames = new Map<string, string>();
+
   function buildRoomList() {
     const seen = new Set<string>();
-    const list: { name: string; count: number }[] = [];
+    const list: { name: string; slug: string; count: number }[] = [];
 
     // Active rooms (with users)
-    for (const [name, users] of rooms) {
-      seen.add(name);
-      list.push({ name, count: users.size });
+    for (const [slug, users] of rooms) {
+      seen.add(slug);
+      list.push({
+        name: roomDisplayNames.get(slug) ?? slug,
+        slug,
+        count: users.size,
+      });
     }
 
     // Rooms with history but no active users
-    for (const name of getKnownRooms()) {
-      if (!seen.has(name)) {
-        list.push({ name, count: 0 });
+    for (const { slug, displayName } of getKnownRooms()) {
+      if (!seen.has(slug)) {
+        list.push({ name: displayName, slug, count: 0 });
       }
     }
 
@@ -175,7 +232,9 @@ async function main() {
     socket.emit("room-list", buildRoomList());
 
     socket.on("join-room", (data: { room: string; username: string; avatar: string }) => {
-      const { room, username, avatar } = data;
+      const { username, avatar } = data;
+      const displayName = data.room.trim();
+      const slug = slugifyRoom(displayName);
 
       // Leave previous room if any
       if (currentRoom) {
@@ -185,6 +244,7 @@ async function main() {
           roomUsers.delete(socket.id);
           if (roomUsers.size === 0) {
             rooms.delete(currentRoom);
+            roomDisplayNames.delete(currentRoom);
           } else {
             io.to(currentRoom).emit("room-users", Array.from(roomUsers.values()));
             io.to(currentRoom).emit("user-left", { username: currentUser?.username });
@@ -192,25 +252,37 @@ async function main() {
         }
       }
 
-      currentRoom = room;
+      currentRoom = slug;
       currentUser = { id: socket.id, username, avatar };
 
-      socket.join(room);
-
-      if (!rooms.has(room)) {
-        rooms.set(room, new Map());
+      // Store display name (first one wins, or update)
+      if (!roomDisplayNames.has(slug)) {
+        roomDisplayNames.set(slug, displayName);
+        setRoomDisplayName(slug, displayName);
       }
-      rooms.get(room)!.set(socket.id, currentUser);
+
+      socket.join(slug);
+
+      if (!rooms.has(slug)) {
+        rooms.set(slug, new Map());
+      }
+      rooms.get(slug)!.set(socket.id, currentUser);
+
+      // Send the canonical slug and display name back to the client
+      socket.emit("room-joined", {
+        slug,
+        displayName: roomDisplayNames.get(slug) ?? displayName,
+      });
 
       // Send chat history to the joining user
-      const history = getBuffer(room);
+      const history = getBuffer(slug);
       if (history.length > 0) {
         socket.emit("message-history", history);
       }
 
-      const roomUsers = Array.from(rooms.get(room)!.values());
-      io.to(room).emit("room-users", roomUsers);
-      socket.to(room).emit("user-joined", { username });
+      const roomUsers = Array.from(rooms.get(slug)!.values());
+      io.to(slug).emit("room-users", roomUsers);
+      socket.to(slug).emit("user-joined", { username });
       broadcastRoomList();
     });
 

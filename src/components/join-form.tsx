@@ -141,7 +141,7 @@ export function JoinForm({ onJoin, initialRoom = "", roomLocked = false, activeR
               <div className="mt-2 flex flex-wrap gap-2">
                 {activeRooms.map((r) => (
                   <button
-                    key={r.name}
+                    key={r.slug}
                     type="button"
                     onClick={() => setRoom(r.name)}
                     className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all ${
