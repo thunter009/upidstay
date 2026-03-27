@@ -52,3 +52,6 @@ next-env.d.ts
 .ralph-tui/session.json
 .ralph-tui/iterations/
 .beads/.br_history/
+
+# bv (beads viewer) local config and caches
+.bv/
