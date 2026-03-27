@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Upidstay
 
-## Getting Started
+Pig Latin chat app. Next.js 16 + Socket.IO + SQLite, with a custom `server.ts` for real-time messaging.
 
-First, run the development server:
+## Local Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Tests: `pnpm test` | Lint: `pnpm lint` | Build: `pnpm build`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `server.ts` — Custom HTTP server with Socket.IO and sql.js for message persistence
+- `src/` — Next.js app router (React 19, Tailwind, Framer Motion)
+- `data/chat.db` — SQLite database (auto-created, gitignored)
 
-## Learn More
+## Production Deployment (Mac Mini)
 
-To learn more about Next.js, take a look at the following resources:
+The app runs on a Mac Mini at `upidstay.hunter:3080` via Tailscale. Pushes to `main` auto-deploy via a self-hosted GitHub Actions runner on the mini.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### How auto-deploy works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Push to `main` triggers `.github/workflows/deploy.yml`
+2. Self-hosted runner (on the mini) checks out the code
+3. `pnpm install --frozen-lockfile && pnpm build`
+4. `deploy/deploy.sh` rsyncs to `/Users/jasper/apps/upidstay`, restarts via PM2
+5. Health check confirms the app responds on port 3080
 
-## Deploy on Vercel
+### Bootstrap (fresh mini or re-setup)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Prerequisites: macOS with Homebrew, Node.js, SSH access.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+# 1. Server setup (installs pnpm, pm2, creates dirs, configures launchd)
+ssh mini-admin 'bash -s' < deploy/setup-mini.sh
+
+# 2. Generate a runner registration token (expires in 1 hour)
+gh api -X POST repos/thunter009/upidstay/actions/runners/registration-token --jq '.token'
+
+# 3. Install and start the GitHub Actions runner
+ssh mini "RUNNER_TOKEN=<token> bash -s" < deploy/setup-runner.sh
+
+# 4. Verify everything is working
+ssh mini 'bash -s' < deploy/verify.sh
+```
+
+After this, every push to `main` auto-deploys.
+
+### Manual deploy (fallback)
+
+```bash
+ssh mini
+cd /Users/jasper/apps/upidstay
+# If the app dir is not a git clone, rsync from your local machine instead
+pnpm install --frozen-lockfile
+pnpm build
+pm2 restart upidstay
+```
+
+### Environment Variables
+
+See `.env.example`. Copy to `.env` on the mini:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3080` | HTTP server port |
+| `DB_PATH` | `data/chat.db` | SQLite database path |
+| `NODE_ENV` | `production` | Node environment |
+
+### Troubleshooting
+
+**App not responding:**
+```bash
+pm2 logs upidstay --lines 30
+pm2 restart upidstay
+```
+
+**Runner not picking up jobs:**
+```bash
+pm2 logs github-runner --lines 30
+# Re-register: generate new token, re-run setup-runner.sh
+```
+
+**Port conflict:**
+```bash
+lsof -i :3080
+```
+
+**Database issues:**
+DB is at `/Users/jasper/apps/upidstay/data/chat.db`. Deploys never overwrite this directory.
+
+**PM2 not starting on reboot:**
+```bash
+pm2 startup launchd -u jasper --hp /Users/jasper
+pm2 save
+```
+
+### Assumptions
+
+- macOS (ARM64) on the deployment target
+- Node.js 25.x (any recent LTS should work)
+- pnpm for package management
+- Tailscale for network access (mini is not publicly reachable)

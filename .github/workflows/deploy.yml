@@ -1,0 +1,31 @@
+name: Deploy to Mac Mini
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Deploy and restart
+        run: bash deploy/deploy.sh
+
+      - name: Health check
+        run: |
+          sleep 4
+          curl -sf -o /dev/null http://localhost:3080 \
+            && echo "Health check passed" \
+            || (echo "Health check FAILED"; exit 1)
